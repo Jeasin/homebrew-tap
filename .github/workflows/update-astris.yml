@@ -1,0 +1,83 @@
+name: Update Astris Cask
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tap
+        uses: actions/checkout@v4
+
+      - name: Update Astris Cask
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          api="https://api.github.com/repos/V380-Ori/Astris.Binaries/releases/latest"
+          release="$(curl -fsSL "$api")"
+
+          tag="$(jq -er '.tag_name' <<< "$release")"
+          [[ "$tag" =~ ^astris-([0-9]+\.[0-9]+\.[0-9]+)$ ]] || {
+            echo "Unexpected release tag: $tag"
+            exit 1
+          }
+          version="${BASH_REMATCH[1]}"
+
+          asset_count="$(jq '[.assets[] | select(.name | test("^Astris-.*\\.dmg$"))] | length' <<< "$release")"
+          [[ "$asset_count" == "1" ]] || {
+            echo "Expected exactly one Astris DMG, found $asset_count"
+            exit 1
+          }
+
+          asset_name="$(jq -er '[.assets[] | select(.name | test("^Astris-.*\\.dmg$"))][0].name' <<< "$release")"
+          url="$(jq -er '[.assets[] | select(.name | test("^Astris-.*\\.dmg$"))][0].browser_download_url' <<< "$release")"
+
+          [[ "$asset_name" =~ ^Astris-${version//./\\.}\+[A-Za-z0-9._-]+\.dmg$ ]] || {
+            echo "Unexpected asset name: $asset_name"
+            exit 1
+          }
+          [[ "$url" == "https://github.com/V380-Ori/Astris.Binaries/releases/download/"* ]] || {
+            echo "Unexpected download URL: $url"
+            exit 1
+          }
+
+          sha256="$(curl -fsSL "$url" | shasum -a 256 | awk '{print $1}')"
+          [[ "$sha256" =~ ^[0-9a-f]{64}$ ]] || {
+            echo "Invalid SHA-256"
+            exit 1
+          }
+
+          cat > Casks/astris.rb <<RUBY
+          cask "astris" do
+            version "$version"
+            sha256 "$sha256"
+
+            url "$url"
+            name "Astris"
+            desc "Nintendo Switch emulator"
+            homepage "https://github.com/V380-Ori/Astris.Binaries"
+
+            depends_on arch: :arm64
+            depends_on macos: ">= :sequoia"
+
+            app "Astris.app"
+          end
+          RUBY
+
+          if git diff --quiet -- Casks/astris.rb; then
+            echo "Astris Cask is already up to date."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/astris.rb
+          git commit -m "Update Astris to $version"
+          git push
