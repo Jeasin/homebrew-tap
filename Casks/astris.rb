@@ -8,6 +8,7 @@ cask "astris" do
   homepage "https://github.com/V380-Ori/Astris.Binaries"
 
   depends_on arch: :arm64
+  depends_on macos: ">= :sequoia"
 
   app "Astris.app"
 end
