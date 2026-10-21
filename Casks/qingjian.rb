@@ -9,13 +9,15 @@ cask "qingjian" do
   desc "Chinese input method"
   homepage "https://github.com/qingjian-team/qingjian"
 
+  livecheck do
+    url :url
+    strategy :github_latest
+  end
+
   depends_on arch: :arm64
-  depends_on macos: ">= :ventura"
+  depends_on macos: :ventura
 
   pkg "qingjian-#{version}-macos-arm64.pkg"
 
-  uninstall script:  {
-              executable: "/Library/Input Methods/Qingjian.app/Contents/Resources/uninstall.sh",
-            },
-            pkgutil: "app.qingjian.inputmethod"
+  uninstall pkgutil: "app.qingjian.inputmethod"
 end
