@@ -123,7 +123,12 @@ for cask in "${targets[@]}"; do
     version="${version//\{$key\}/$value}"
   done
 
-  if ! sha="$(curl -fsSL --retry 3 "$asset_url" | digest)"; then
+  # GitHub reports the digest of uploaded release assets, so no download is
+  # needed in the common case; fall back to hashing the file for older uploads.
+  asset_digest="$(jq -r '.digest // empty' <<<"$asset")"
+  if [[ "$asset_digest" =~ ^sha256:([0-9a-f]{64})$ ]]; then
+    sha="${BASH_REMATCH[1]}"
+  elif ! sha="$(curl -fsSL --retry 3 "$asset_url" | digest)"; then
     log "$cask: could not download $asset_url"
     status=1
     continue

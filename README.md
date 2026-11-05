@@ -49,7 +49,7 @@ brew uninstall --zap --cask astris   # 连同 ~/Library 下的配置和数据一
 
 ## 自动更新
 
-- `.github/workflows/update-casks.yml`：每天 02:17 UTC 拉一遍所有上游 release，只重写 cask 里的 `version` 和 `sha256`，有变化就提交。支持手动触发并指定单个 cask。
+- `.github/workflows/update-casks.yml`：每天 02:17 UTC 拉一遍所有上游 release，只重写 cask 里的 `version` 和 `sha256`，有变化就提交。支持手动触发并指定单个 cask。sha256 优先取 GitHub 给出的 asset digest，不下载安装包；老版本上传的 asset 没有 digest 时才回落到下载计算。
 - `.github/workflows/audit.yml`：`Casks/**` 有改动时在 macOS runner 上跑 `brew audit`，挡住不合规的 cask。
 
 两个 workflow 都只改 `version` / `sha256`，不会覆盖 cask 里手写的 `livecheck`、`zap`、`caveats` 等内容。
