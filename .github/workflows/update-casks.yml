@@ -1,0 +1,74 @@
+name: Update casks
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      cask:
+        description: Cask to update (leave empty to update everything)
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-casks
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_ENV_HINTS: 1
+    steps:
+      - name: Checkout tap
+        uses: actions/checkout@v4
+
+      - name: Bump casks
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CASK: ${{ inputs.cask }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/bump-casks.sh
+          if [[ -n "${CASK:-}" ]]; then
+            ./scripts/bump-casks.sh "$CASK"
+          else
+            ./scripts/bump-casks.sh
+          fi
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- Casks; then
+            echo "All casks are already up to date."
+            exit 0
+          fi
+
+          summary=""
+          for file in $(git diff --name-only -- Casks); do
+            name="$(basename "$file" .rb)"
+            version="$(awk -F'"' '/^  version "/ { print $2; exit }' "$file")"
+            summary="$summary, $name $version"
+          done
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks
+          git commit -m "Update casks:${summary#,}"
+
+          # Another push may land while this job runs; rebase and retry.
+          for attempt in 1 2 3; do
+            if git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && git push; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+
+          echo "Failed to push after 3 attempts" >&2
+          exit 1

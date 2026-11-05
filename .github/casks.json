@@ -1,0 +1,14 @@
+{
+  "astris": {
+    "repo": "V380-Ori/Astris.Binaries",
+    "tag": "^astris-(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)$",
+    "asset": "^Astris-(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)\\+(?<build>[0-9A-Za-z._-]+)\\.dmg$",
+    "version": "{version},{build}"
+  },
+  "jpop-corpus-tool": {
+    "repo": "Yisoragoto/jpop-corpus-tool",
+    "tag": "^v?(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)$",
+    "asset": "^JPOP\\.Corpus\\.Tool_(?<version>[0-9]+\\.[0-9]+\\.[0-9]+)_macOS_arm64\\.dmg$",
+    "version": "{version}"
+  }
+}

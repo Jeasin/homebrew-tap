@@ -1,0 +1,65 @@
+name: Audit casks
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Casks/**"
+      - "scripts/**"
+      - ".github/workflows/audit.yml"
+  pull_request:
+    paths:
+      - "Casks/**"
+      - "scripts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: macos-latest
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_ENV_HINTS: 1
+    steps:
+      - name: Checkout tap
+        uses: actions/checkout@v4
+
+      - name: Link checkout into Homebrew's tap directory
+        run: |
+          set -euo pipefail
+          tap_dir="$(brew --repository)/Library/Taps/jeasin/homebrew-tap"
+          mkdir -p "$(dirname "$tap_dir")"
+          rm -rf "$tap_dir"
+          ln -s "$GITHUB_WORKSPACE" "$tap_dir"
+
+      - name: Trust the tap
+        run: brew trust --tap jeasin/tap
+
+      - name: Audit every cask
+        run: |
+          set -euo pipefail
+
+          casks=()
+          for file in Casks/*.rb; do
+            casks+=("$(basename "$file" .rb)")
+          done
+
+          if (( ${#casks[@]} == 0 )); then
+            echo "No casks to audit."
+            exit 0
+          fi
+
+          printf 'Auditing: %s\n' "${casks[*]}"
+          brew audit --cask --tap jeasin/tap "${casks[@]}"
+
+      - name: Verify bump rules still parse every cask
+        run: |
+          set -euo pipefail
+          for cask in Casks/*.rb; do
+            name="$(basename "$cask" .rb)"
+            jq -e --arg c "$name" 'has($c)' .github/casks.json >/dev/null \
+              || { echo "Casks/$name.rb has no entry in .github/casks.json"; exit 1; }
+          done
