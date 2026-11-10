@@ -29,6 +29,7 @@ brew uninstall --zap --cask astris   # 连同 ~/Library 下的配置和数据一
 | --- | --- | --- |
 | [`astris`](Casks/astris.rb) | Nintendo Switch emulator | macOS 15+ / arm64 |
 | [`jpop-corpus-tool`](Casks/jpop-corpus-tool.rb) | 本地 Jpop 语料检索、Anki 制卡与同步歌词播放器 | macOS 14+ / arm64 |
+| [`replaymac`](Casks/replaymac.rb) | 菜单栏即时回放录制（ShadowPlay 那种） | macOS 15+ / 通用 |
 
 ## 新增一个 App
 
