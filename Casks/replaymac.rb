@@ -1,6 +1,6 @@
 cask "replaymac" do
-  version "2.3.0"
-  sha256 "e8b7091b25c91ef3fed19cc7e753684a63215c682835b66614aeb2e3766895d9"
+  version "2.4.0"
+  sha256 "fa4a719fca8429f73f6aec7e078a5ecf6cfbdec8fbd9a12a9053d9f13502e43b"
 
   url "https://github.com/picccassso/ReplayMac/releases/download/v#{version}/ReplayMac-#{version}.dmg"
   name "ReplayMac"
